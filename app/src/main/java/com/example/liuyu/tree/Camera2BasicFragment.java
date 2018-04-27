@@ -29,6 +29,10 @@ import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -57,6 +61,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 import com.example.android.camera2basic.R;
 
@@ -73,7 +78,48 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class Camera2BasicFragment extends Fragment
-        implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback {
+        implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback{
+
+    private SensorManager sensorManager;
+    private Sensor accelerometerSensor;
+    private Sensor magneticSensor;
+    private float[] accelerometerValues = new float[3];
+    private float[] magneticFieldValues = new float[3];
+    private TextView degreeTextView;
+
+    private final SensorEventListener sensorEventListener = new SensorEventListener() {
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                accelerometerValues = event.values;
+            }
+            if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                magneticFieldValues = event.values;
+            }
+            updateOrientation();
+        }
+    };
+
+
+    private void updateOrientation(){
+        float[] values = new float[3];
+        float[] R = new float[9];
+        SensorManager.getRotationMatrix(R, null, accelerometerValues,
+                magneticFieldValues);
+        SensorManager.getOrientation(R, values);
+        double degree = Math.toDegrees(values[1]);
+        String isVertical = "手机尚未竖直";
+        if(Math.abs(degree)<95&&Math.abs(degree)>85){
+            isVertical = "手机已竖直";
+        }
+        degreeTextView.setText(isVertical);
+    }
 
     /**
      * Conversion from screen rotation to JPEG orientation.
@@ -156,6 +202,8 @@ public class Camera2BasicFragment extends Fragment
         }
 
     };
+
+
 
     /**
      * ID of the current {@link CameraDevice}.
@@ -430,6 +478,15 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        degreeTextView = (TextView) view.findViewById(R.id.degree);
+
+        sensorManager = (SensorManager)this.getActivity().getSystemService(Context.SENSOR_SERVICE);
+        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        //注册监听
+        sensorManager.registerListener(sensorEventListener, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(sensorEventListener, magneticSensor, SensorManager.SENSOR_DELAY_GAME);
+        updateOrientation();
     }
 
     @Override
@@ -440,6 +497,7 @@ public class Camera2BasicFragment extends Fragment
 
     @Override
     public void onResume() {
+
         super.onResume();
         startBackgroundThread();
 
@@ -456,6 +514,8 @@ public class Camera2BasicFragment extends Fragment
 
     @Override
     public void onPause() {
+        // 解除注册
+        sensorManager.unregisterListener(sensorEventListener);
         closeCamera();
         stopBackgroundThread();
         super.onPause();
@@ -912,6 +972,8 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
+
+
     /**
      * Saves a JPEG {@link Image} into the specified {@link File}.
      */
@@ -1033,5 +1095,6 @@ public class Camera2BasicFragment extends Fragment
                     .create();
         }
     }
+
 
 }
