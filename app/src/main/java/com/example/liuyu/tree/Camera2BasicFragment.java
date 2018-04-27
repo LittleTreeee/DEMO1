@@ -24,11 +24,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.ImageFormat;
-import android.graphics.Matrix;
-import android.graphics.Point;
-import android.graphics.RectF;
-import android.graphics.SurfaceTexture;
+import android.graphics.*;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -107,6 +103,7 @@ public class Camera2BasicFragment extends Fragment
     };
 
 
+    //更新是否垂直的信息
     private void updateOrientation(){
         float[] values = new float[3];
         float[] R = new float[9];
@@ -463,6 +460,33 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
+    private static Size chooseOptimalSize(Size[] choices
+            , int width, int height, Size aspectRatio)
+    {
+        // 收集摄像头支持的大过预览Surface的分辨率
+        List<Size> bigEnough = new ArrayList<>();
+        int w = aspectRatio.getWidth();
+        int h = aspectRatio.getHeight();
+        for (Size option : choices)
+        {
+            if (option.getHeight() == option.getWidth() * h / w &&
+                    option.getWidth() >= width && option.getHeight() >= height)
+            {
+                bigEnough.add(option);
+            }
+        }
+        // 如果找到多个预览尺寸，获取其中面积最小的
+        if (bigEnough.size() > 0)
+        {
+            return Collections.min(bigEnough, new MainActivity.CompareSizesByArea());
+        }
+        else
+        {
+            System.out.println("找不到合适的预览尺寸！！！");
+            return choices[0];
+        }
+    }
+
     public static Camera2BasicFragment newInstance() {
         return new Camera2BasicFragment();
     }
@@ -514,7 +538,7 @@ public class Camera2BasicFragment extends Fragment
 
     @Override
     public void onPause() {
-        // 解除注册
+        // 解除传感器的注册
         sensorManager.unregisterListener(sensorEventListener);
         closeCamera();
         stopBackgroundThread();
@@ -548,7 +572,83 @@ public class Camera2BasicFragment extends Fragment
      * @param width  The width of available size for camera preview
      * @param height The height of available size for camera preview
      */
-    @SuppressWarnings("SuspiciousNameCombination")
+//    @SuppressWarnings("SuspiciousNameCombination")
+//    private void setUpCameraOutputs(int width, int height)
+//    {
+//        CameraManager manager = (CameraManager) this.getActivity().getSystemService(Context.CAMERA_SERVICE);
+//        try
+//        {
+//            // 获取指定摄像头的特性
+//            CameraCharacteristics characteristics
+//                    = manager.getCameraCharacteristics(mCameraId);
+//            // 获取摄像头支持的配置属性
+//            StreamConfigurationMap map = characteristics.get(
+//                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+//            // 获取摄像头支持的最大尺寸
+//            Size largest = Collections.max(
+//                    Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+//                    new MainActivity.CompareSizesByArea());
+//            // 创建一个ImageReader对象，用于获取摄像头的图像数据
+//            mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
+//                    ImageFormat.JPEG, 2);
+//            mImageReader.setOnImageAvailableListener(
+//                    new ImageReader.OnImageAvailableListener()
+//                    {
+//                        // 当照片数据可用时激发该方法
+//                        @Override
+//                        public void onImageAvailable(ImageReader reader)
+//                        {
+//                            // 获取捕获的照片数据
+//                            Image image = reader.acquireNextImage();
+//                            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+//                            byte[] bytes = new byte[buffer.remaining()];
+//                            // 使用IO流将照片写入指定文件
+//                            File file = new File(getActivity().getExternalFilesDir(null), "pic.jpg");
+//                            buffer.get(bytes);
+//                            try (
+//                                    FileOutputStream output = new FileOutputStream(file))
+//                            {
+//                                output.write(bytes);
+//                                Toast.makeText(getActivity(), "保存: "
+//                                        + file, Toast.LENGTH_SHORT).show();
+//                            }
+//                            catch (Exception e)
+//                            {
+//                                e.printStackTrace();
+//                            }
+//                            finally
+//                            {
+//                                image.close();
+//                            }
+//                        }
+//                    }, null);
+//            // 获取最佳的预览尺寸
+//            Size previewSize = chooseOptimalSize(map.getOutputSizes(
+//                    SurfaceTexture.class), width, height, largest);
+//            // 根据选中的预览尺寸来调整预览组件（TextureView）的长宽比
+//            int orientation = getResources().getConfiguration().orientation;
+//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+//            {
+//                mTextureView.setAspectRatio(previewSize.getWidth(), previewSize.
+//                        getHeight());
+//            }
+//            else
+//            {
+//                mTextureView.setAspectRatio(previewSize.getHeight(),
+//                        previewSize.getWidth());
+//            }
+//        }
+//        catch (CameraAccessException e)
+//        {
+//            e.printStackTrace();
+//        }
+//        catch (NullPointerException e)
+//        {
+//            System.out.println("出现错误。");
+//        }
+//    }
+
+
     private void setUpCameraOutputs(int width, int height) {
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
@@ -577,6 +677,57 @@ public class Camera2BasicFragment extends Fragment
                         ImageFormat.JPEG, /*maxImages*/2);
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
+
+
+//                mImageReader.setOnImageAvailableListener(
+//                        new ImageReader.OnImageAvailableListener()
+//                        {
+//                            // 当照片数据可用时激发该方法
+//                            @Override
+//                            public void onImageAvailable(ImageReader reader)
+//                            {
+//                                // 获取捕获的照片数据
+//                                Image image = reader.acquireNextImage();
+//                                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+//                                byte[] bytes = new byte[buffer.remaining()];
+//                                // 使用IO流将照片写入指定文件
+//                                File file = new File(getActivity().getExternalFilesDir(null), "pic.jpg");
+//                                buffer.get(bytes);
+//                                try (
+//                                        FileOutputStream output = new FileOutputStream(file))
+//                                {
+//                                    output.write(bytes);
+//                                    Toast.makeText(getActivity(), "保存: "
+//                                            + file, Toast.LENGTH_SHORT).show();
+//                                }
+//                                catch (Exception e)
+//                                {
+//                                    e.printStackTrace();
+//                                }
+//                                finally
+//                                {
+//                                    image.close();
+//                                }
+//                            }
+//                        }, null);
+
+//                mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() { //可以在这里处理拍照得到的临时照片 例如，写入本地
+//                    @Override
+//                    public void onImageAvailable(ImageReader reader) {
+//                        mCameraDevice.close();
+//                        mTextureView.setVisibility(View.GONE);
+//                        iv_show.setVisibility(View.VISIBLE);
+//                        // 拿到拍照照片数据
+//                        Image image = reader.acquireNextImage();
+//                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+//                        byte[] bytes = new byte[buffer.remaining()];
+//                        buffer.get(bytes);//由缓冲区存入字节数组
+//                        final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//                        if (bitmap != null) {
+//                            iv_show.setImageBitmap(bitmap);
+//                        }
+//                    }
+//                }, mBackgroundHandler);
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
