@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.liuyu.tree;
+package com.example.liuyu.tree.Fragment;
 
 import android.Manifest;
 import android.app.Activity;
@@ -42,7 +42,6 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -50,6 +49,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -62,9 +64,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.example.android.camera2basic.R;
+import com.example.liuyu.tree.view.AutoFitTextureView;
+import com.example.liuyu.tree.view.WriteDialogListener;
+import com.example.liuyu.tree.view.WritePadDialog;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -499,32 +503,6 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
-    private static Size chooseOptimalSize(Size[] choices
-            , int width, int height, Size aspectRatio)
-    {
-        // 收集摄像头支持的大过预览Surface的分辨率
-        List<Size> bigEnough = new ArrayList<>();
-        int w = aspectRatio.getWidth();
-        int h = aspectRatio.getHeight();
-        for (Size option : choices)
-        {
-            if (option.getHeight() == option.getWidth() * h / w &&
-                    option.getWidth() >= width && option.getHeight() >= height)
-            {
-                bigEnough.add(option);
-            }
-        }
-        // 如果找到多个预览尺寸，获取其中面积最小的
-        if (bigEnough.size() > 0)
-        {
-            return Collections.min(bigEnough, new MainActivity.CompareSizesByArea());
-        }
-        else
-        {
-            System.out.println("找不到合适的预览尺寸！！！");
-            return choices[0];
-        }
-    }
 
     public static Camera2BasicFragment newInstance() {
         return new Camera2BasicFragment();
@@ -544,6 +522,7 @@ public class Camera2BasicFragment extends Fragment
         degreeTextView = (TextView) view.findViewById(R.id.degree);
         iv = (ImageView) view.findViewById(R.id.iv);
 
+
         sensorManager = (SensorManager)this.getActivity().getSystemService(Context.SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -561,6 +540,25 @@ public class Camera2BasicFragment extends Fragment
 
     @Override
     public void onResume() {
+
+        iv.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+                WritePadDialog mWritePadDialog = new WritePadDialog(
+                        getActivity(), new WriteDialogListener() {
+
+                    @Override
+                    public void onPaintDone(Object object) {
+                        Bitmap mSignBitmap = (Bitmap) object;
+                        iv.setImageBitmap(mSignBitmap);
+//                                mTVSign.setVisibility(View.GONE);
+                    }
+                });
+
+                mWritePadDialog.show();
+            }
+        });
 
         super.onResume();
         startBackgroundThread();
@@ -1197,6 +1195,7 @@ public class Camera2BasicFragment extends Fragment
                 iv.setImageBitmap(bitmap);
             }
 
+
             FileOutputStream output = null;
             try {
                 output = new FileOutputStream(mFile);
@@ -1216,6 +1215,7 @@ public class Camera2BasicFragment extends Fragment
         }
 
     }
+
 
     /**
      * Compares two {@code Size}s based on their areas.

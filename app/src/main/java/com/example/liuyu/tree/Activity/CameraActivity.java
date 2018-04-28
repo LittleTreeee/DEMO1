@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.example.liuyu.tree;
+package com.example.liuyu.tree.Activity;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import com.example.android.camera2basic.R;
+import com.example.liuyu.tree.Fragment.Camera2BasicFragment;
 
 public class CameraActivity extends AppCompatActivity {
 

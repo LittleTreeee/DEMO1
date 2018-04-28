@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.liuyu.tree;
+package com.example.liuyu.tree.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
