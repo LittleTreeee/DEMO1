@@ -42,6 +42,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -57,11 +58,13 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.example.android.camera2basic.R;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -82,6 +85,7 @@ public class Camera2BasicFragment extends Fragment
     private float[] accelerometerValues = new float[3];
     private float[] magneticFieldValues = new float[3];
     private TextView degreeTextView;
+    private ImageView iv;
 
     private final SensorEventListener sensorEventListener = new SensorEventListener() {
 
@@ -290,8 +294,43 @@ public class Camera2BasicFragment extends Fragment
         @Override
         public void onImageAvailable(ImageReader reader) {
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
-        }
 
+//            //先验证手机是否有sdcard
+//            String status = Environment.getExternalStorageState();
+//            if (!status.equals(Environment.MEDIA_MOUNTED)) {
+//                Toast.makeText(getActivity().getApplicationContext(), "你的sd卡不可用。", Toast.LENGTH_SHORT).show();
+//                return;
+//            }
+//            // 获取捕获的照片数据
+//            Image image = reader.acquireNextImage();
+//            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+//            byte[] data = new byte[buffer.remaining()];
+//            buffer.get(data);
+//
+//            //手机拍照都是存到这个路径
+//            String filePath = Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/";
+//            String picturePath = System.currentTimeMillis() + ".jpg";
+//            File file = new File(filePath, picturePath);
+//            showToast("皮皮钰保存的图片"+filePath);
+//            try {
+//                //存到本地相册
+//                FileOutputStream fileOutputStream = new FileOutputStream(file);
+//                fileOutputStream.write(data);
+//                fileOutputStream.close();
+//
+//                //显示图片
+//                BitmapFactory.Options options = new BitmapFactory.Options();
+//                options.inSampleSize = 2;
+//                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+//                iv.setImageBitmap(bitmap);
+//            } catch (FileNotFoundException e) {
+//                e.printStackTrace();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } finally {
+//                image.close();
+//            }
+        }
     };
 
     /**
@@ -503,6 +542,7 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         degreeTextView = (TextView) view.findViewById(R.id.degree);
+        iv = (ImageView) view.findViewById(R.id.iv);
 
         sensorManager = (SensorManager)this.getActivity().getSystemService(Context.SENSOR_SERVICE);
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -1128,7 +1168,8 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Saves a JPEG {@link Image} into the specified {@link File}.
      */
-    private static class ImageSaver implements Runnable {
+    //todo static被我删了
+    private class ImageSaver implements Runnable {
 
         /**
          * The JPEG image
@@ -1146,9 +1187,16 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void run() {
+            //todo 我猜这个就是保存图片了？？？我这里只做了显示，没有保存进SD卡
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
+
+            final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            if (bitmap != null) {
+                iv.setImageBitmap(bitmap);
+            }
+
             FileOutputStream output = null;
             try {
                 output = new FileOutputStream(mFile);
