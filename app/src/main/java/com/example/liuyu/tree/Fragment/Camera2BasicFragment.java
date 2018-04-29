@@ -22,6 +22,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.*;
@@ -41,9 +42,12 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
@@ -1191,26 +1195,53 @@ public class Camera2BasicFragment extends Fragment
             buffer.get(bytes);
 
             final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            if (bitmap != null) {
-                iv.setImageBitmap(bitmap);
+//            if (bitmap != null) {
+//                iv.setImageBitmap(bitmap);
+//            }
+//
+//
+//            FileOutputStream output = null;
+//            try {
+//                output = new FileOutputStream(mFile);
+//                output.write(bytes);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } finally {
+//                mImage.close();
+//                if (null != output) {
+//                    try {
+//                        output.close();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+
+
+
+            // 首先保存图片
+            String storePath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Tree";
+            File appDir = new File(storePath);
+            if (!appDir.exists()) {
+                appDir.mkdir();
             }
-
-
-            FileOutputStream output = null;
+            String fileName = System.currentTimeMillis() + ".jpg";
+            File file = new File(appDir, fileName);
             try {
-                output = new FileOutputStream(mFile);
-                output.write(bytes);
+                FileOutputStream fos = new FileOutputStream(file);
+                //通过io流的方式来压缩保存图片
+                boolean isSuccess = bitmap.compress(Bitmap.CompressFormat.JPEG, 60, fos);
+                fos.flush();
+                fos.close();
+
+                //把文件插入到系统图库
+                MediaStore.Images.Media.insertImage(getContext().getContentResolver(), file.getAbsolutePath(), fileName, null);
+
+                //保存图片后发送广播通知更新数据库
+                Uri uri = Uri.fromFile(file);
+                getContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                mImage.close();
-                if (null != output) {
-                    try {
-                        output.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
         }
 
