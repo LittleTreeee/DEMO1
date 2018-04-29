@@ -299,42 +299,6 @@ public class Camera2BasicFragment extends Fragment
         @Override
         public void onImageAvailable(ImageReader reader) {
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage()));
-
-//            //先验证手机是否有sdcard
-//            String status = Environment.getExternalStorageState();
-//            if (!status.equals(Environment.MEDIA_MOUNTED)) {
-//                Toast.makeText(getActivity().getApplicationContext(), "你的sd卡不可用。", Toast.LENGTH_SHORT).show();
-//                return;
-//            }
-//            // 获取捕获的照片数据
-//            Image image = reader.acquireNextImage();
-//            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-//            byte[] data = new byte[buffer.remaining()];
-//            buffer.get(data);
-//
-//            //手机拍照都是存到这个路径
-//            String filePath = Environment.getExternalStorageDirectory().getPath() + "/DCIM/Camera/";
-//            String picturePath = System.currentTimeMillis() + ".jpg";
-//            File file = new File(filePath, picturePath);
-//            showToast("皮皮钰保存的图片"+filePath);
-//            try {
-//                //存到本地相册
-//                FileOutputStream fileOutputStream = new FileOutputStream(file);
-//                fileOutputStream.write(data);
-//                fileOutputStream.close();
-//
-//                //显示图片
-//                BitmapFactory.Options options = new BitmapFactory.Options();
-//                options.inSampleSize = 2;
-//                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
-//                iv.setImageBitmap(bitmap);
-//            } catch (FileNotFoundException e) {
-//                e.printStackTrace();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            } finally {
-//                image.close();
-//            }
         }
     };
 
@@ -612,83 +576,6 @@ public class Camera2BasicFragment extends Fragment
      * @param width  The width of available size for camera preview
      * @param height The height of available size for camera preview
      */
-//    @SuppressWarnings("SuspiciousNameCombination")
-//    private void setUpCameraOutputs(int width, int height)
-//    {
-//        CameraManager manager = (CameraManager) this.getActivity().getSystemService(Context.CAMERA_SERVICE);
-//        try
-//        {
-//            // 获取指定摄像头的特性
-//            CameraCharacteristics characteristics
-//                    = manager.getCameraCharacteristics(mCameraId);
-//            // 获取摄像头支持的配置属性
-//            StreamConfigurationMap map = characteristics.get(
-//                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-//            // 获取摄像头支持的最大尺寸
-//            Size largest = Collections.max(
-//                    Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
-//                    new MainActivity.CompareSizesByArea());
-//            // 创建一个ImageReader对象，用于获取摄像头的图像数据
-//            mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
-//                    ImageFormat.JPEG, 2);
-//            mImageReader.setOnImageAvailableListener(
-//                    new ImageReader.OnImageAvailableListener()
-//                    {
-//                        // 当照片数据可用时激发该方法
-//                        @Override
-//                        public void onImageAvailable(ImageReader reader)
-//                        {
-//                            // 获取捕获的照片数据
-//                            Image image = reader.acquireNextImage();
-//                            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-//                            byte[] bytes = new byte[buffer.remaining()];
-//                            // 使用IO流将照片写入指定文件
-//                            File file = new File(getActivity().getExternalFilesDir(null), "pic.jpg");
-//                            buffer.get(bytes);
-//                            try (
-//                                    FileOutputStream output = new FileOutputStream(file))
-//                            {
-//                                output.write(bytes);
-//                                Toast.makeText(getActivity(), "保存: "
-//                                        + file, Toast.LENGTH_SHORT).show();
-//                            }
-//                            catch (Exception e)
-//                            {
-//                                e.printStackTrace();
-//                            }
-//                            finally
-//                            {
-//                                image.close();
-//                            }
-//                        }
-//                    }, null);
-//            // 获取最佳的预览尺寸
-//            Size previewSize = chooseOptimalSize(map.getOutputSizes(
-//                    SurfaceTexture.class), width, height, largest);
-//            // 根据选中的预览尺寸来调整预览组件（TextureView）的长宽比
-//            int orientation = getResources().getConfiguration().orientation;
-//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-//            {
-//                mTextureView.setAspectRatio(previewSize.getWidth(), previewSize.
-//                        getHeight());
-//            }
-//            else
-//            {
-//                mTextureView.setAspectRatio(previewSize.getHeight(),
-//                        previewSize.getWidth());
-//            }
-//        }
-//        catch (CameraAccessException e)
-//        {
-//            e.printStackTrace();
-//        }
-//        catch (NullPointerException e)
-//        {
-//            System.out.println("出现错误。");
-//        }
-//    }
-
-
     private void setUpCameraOutputs(int width, int height) {
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
@@ -718,56 +605,6 @@ public class Camera2BasicFragment extends Fragment
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
 
-
-//                mImageReader.setOnImageAvailableListener(
-//                        new ImageReader.OnImageAvailableListener()
-//                        {
-//                            // 当照片数据可用时激发该方法
-//                            @Override
-//                            public void onImageAvailable(ImageReader reader)
-//                            {
-//                                // 获取捕获的照片数据
-//                                Image image = reader.acquireNextImage();
-//                                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-//                                byte[] bytes = new byte[buffer.remaining()];
-//                                // 使用IO流将照片写入指定文件
-//                                File file = new File(getActivity().getExternalFilesDir(null), "pic.jpg");
-//                                buffer.get(bytes);
-//                                try (
-//                                        FileOutputStream output = new FileOutputStream(file))
-//                                {
-//                                    output.write(bytes);
-//                                    Toast.makeText(getActivity(), "保存: "
-//                                            + file, Toast.LENGTH_SHORT).show();
-//                                }
-//                                catch (Exception e)
-//                                {
-//                                    e.printStackTrace();
-//                                }
-//                                finally
-//                                {
-//                                    image.close();
-//                                }
-//                            }
-//                        }, null);
-
-//                mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() { //可以在这里处理拍照得到的临时照片 例如，写入本地
-//                    @Override
-//                    public void onImageAvailable(ImageReader reader) {
-//                        mCameraDevice.close();
-//                        mTextureView.setVisibility(View.GONE);
-//                        iv_show.setVisibility(View.VISIBLE);
-//                        // 拿到拍照照片数据
-//                        Image image = reader.acquireNextImage();
-//                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-//                        byte[] bytes = new byte[buffer.remaining()];
-//                        buffer.get(bytes);//由缓冲区存入字节数组
-//                        final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-//                        if (bitmap != null) {
-//                            iv_show.setImageBitmap(bitmap);
-//                        }
-//                    }
-//                }, mBackgroundHandler);
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
@@ -1168,58 +1005,6 @@ public class Camera2BasicFragment extends Fragment
     /**
      * Saves a JPEG {@link Image} into the specified {@link File}.
      */
-    //todo static被我删了
-//    private class ImageSaver implements Runnable {
-//
-//        /**
-//         * The JPEG image
-//         */
-//        private final Image mImage;
-//        /**
-//         * The file we save the image into.
-//         */
-//        private final File mFile;
-//
-//        ImageSaver(Image image, File file) {
-//            mImage = image;
-//            mFile = file;
-//        }
-//
-//        @Override
-//        public void run() {
-//            //todo 我猜这个就是保存图片了？？？我这里只做了显示，没有保存进SD卡
-//            ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
-//            byte[] bytes = new byte[buffer.remaining()];
-//            buffer.get(bytes);
-//
-//            final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-////            if (bitmap != null) {
-////                iv.setImageBitmap(bitmap);
-////            }
-//
-//
-//            FileOutputStream output = null;
-//            try {
-//                output = new FileOutputStream(mFile);
-//                output.write(bytes);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            } finally {
-//                mImage.close();
-//                if (null != output) {
-//                    try {
-//                        output.close();
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//
-//
-//        }
-//
-//    }
-
     public class ImageSaver implements Runnable {
 
         private Image mImage;
