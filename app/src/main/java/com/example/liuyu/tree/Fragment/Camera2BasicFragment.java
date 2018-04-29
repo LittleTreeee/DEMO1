@@ -112,7 +112,7 @@ public class Camera2BasicFragment extends Fragment
     };
 
 
-    //更新是否垂直的信息
+    //todo: 更新是否垂直的信息
     private void updateOrientation(){
         float[] values = new float[3];
         float[] R = new float[9];
@@ -120,11 +120,12 @@ public class Camera2BasicFragment extends Fragment
                 magneticFieldValues);
         SensorManager.getOrientation(R, values);
         double degree = Math.toDegrees(values[1]);
+        int showDegree = (int) degree+1;
         String isVertical = "手机尚未竖直";
         if(Math.abs(degree)<95&&Math.abs(degree)>85){
             isVertical = "手机已竖直";
         }
-        degreeTextView.setText(isVertical);
+        degreeTextView.setText(showDegree+" "+isVertical);
     }
 
     /**
@@ -1015,11 +1016,17 @@ public class Camera2BasicFragment extends Fragment
         }
 
         @Override
+        //todo 保存图片
         public void run() {
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
             FileOutputStream output = null;
+
+//            final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//            if (bitmap != null) {
+//                iv.setImageBitmap(bitmap);
+//            }
 
             SimpleDateFormat sdf = new SimpleDateFormat(
                     "yyyyMMdd_HHmmss",
@@ -1033,6 +1040,7 @@ public class Camera2BasicFragment extends Fragment
             try {
                 output = new FileOutputStream(mFile);
                 output.write(bytes);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -1046,6 +1054,38 @@ public class Camera2BasicFragment extends Fragment
                     }
                 }
             }
+
+            CameraManager manager = (CameraManager)getActivity().getSystemService(Context.CAMERA_SERVICE);
+            // 获取指定摄像头的特性
+            CameraCharacteristics characteristics
+                    = null;
+            try {
+                characteristics = manager.getCameraCharacteristics(mCameraId);
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
+//            // 获取摄像头支持的配置属性
+//            StreamConfigurationMap map = characteristics.get(
+//                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+//            // 获取摄像头支持的最大尺寸
+//            Size largest = Collections.max(
+//                    Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+//                    getActivity().CompareSizesByArea());
+//            // 获取最佳的预览尺寸
+//            Size previewSize = chooseOptimalSize(map.getOutputSizes(
+//                    SurfaceTexture.class), mImage.getWidth(), mImage.getHeight(), largest);
+//            // 根据选中的预览尺寸来调整预览组件（TextureView）的长宽比
+//            int orientation = getResources().getConfiguration().orientation;
+//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
+//            {
+//                mTextureView.setAspectRatio(previewSize.getWidth(), previewSize.
+//                        getHeight());
+//            }
+//            else
+//            {
+//                mTextureView.setAspectRatio(previewSize.getHeight(),
+//                        previewSize.getWidth());
+//            }
         }
     }
     /**
