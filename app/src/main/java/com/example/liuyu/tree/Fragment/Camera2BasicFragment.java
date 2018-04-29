@@ -76,11 +76,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -301,7 +298,7 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage()));
 
 //            //先验证手机是否有sdcard
 //            String status = Environment.getExternalStorageState();
@@ -539,7 +536,8 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mFile = new File(getActivity().getExternalFilesDir(null), "pic.jpg");
+        String fileName = System.currentTimeMillis()+".jpg";
+        mFile = new File(getActivity().getExternalFilesDir(null), fileName);
     }
 
     @Override
@@ -1171,33 +1169,33 @@ public class Camera2BasicFragment extends Fragment
      * Saves a JPEG {@link Image} into the specified {@link File}.
      */
     //todo static被我删了
-    private class ImageSaver implements Runnable {
-
-        /**
-         * The JPEG image
-         */
-        private final Image mImage;
-        /**
-         * The file we save the image into.
-         */
-        private final File mFile;
-
-        ImageSaver(Image image, File file) {
-            mImage = image;
-            mFile = file;
-        }
-
-        @Override
-        public void run() {
-            //todo 我猜这个就是保存图片了？？？我这里只做了显示，没有保存进SD卡
-            ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
-            byte[] bytes = new byte[buffer.remaining()];
-            buffer.get(bytes);
-
-            final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-//            if (bitmap != null) {
-//                iv.setImageBitmap(bitmap);
-//            }
+//    private class ImageSaver implements Runnable {
+//
+//        /**
+//         * The JPEG image
+//         */
+//        private final Image mImage;
+//        /**
+//         * The file we save the image into.
+//         */
+//        private final File mFile;
+//
+//        ImageSaver(Image image, File file) {
+//            mImage = image;
+//            mFile = file;
+//        }
+//
+//        @Override
+//        public void run() {
+//            //todo 我猜这个就是保存图片了？？？我这里只做了显示，没有保存进SD卡
+//            ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
+//            byte[] bytes = new byte[buffer.remaining()];
+//            buffer.get(bytes);
+//
+//            final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+////            if (bitmap != null) {
+////                iv.setImageBitmap(bitmap);
+////            }
 //
 //
 //            FileOutputStream output = null;
@@ -1216,38 +1214,55 @@ public class Camera2BasicFragment extends Fragment
 //                    }
 //                }
 //            }
+//
+//
+//        }
+//
+//    }
 
+    public class ImageSaver implements Runnable {
 
+        private Image mImage;
+        private File mFile;
 
-            // 首先保存图片
-            String storePath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Tree";
-            File appDir = new File(storePath);
-            if (!appDir.exists()) {
-                appDir.mkdir();
-            }
-            String fileName = System.currentTimeMillis() + ".jpg";
-            File file = new File(appDir, fileName);
+        public ImageSaver(Image image) {
+            this.mImage = image;
+        }
+
+        @Override
+        public void run() {
+            ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
+            byte[] bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+            FileOutputStream output = null;
+
+            SimpleDateFormat sdf = new SimpleDateFormat(
+                    "yyyyMMdd_HHmmss",
+                    Locale.US);
+
+            String fname = "IMG_" +
+                    sdf.format(new Date())
+                    + ".jpg";
+            mFile = new File(getActivity().getApplication().getExternalFilesDir(null), fname);
+
             try {
-                FileOutputStream fos = new FileOutputStream(file);
-                //通过io流的方式来压缩保存图片
-                boolean isSuccess = bitmap.compress(Bitmap.CompressFormat.JPEG, 60, fos);
-                fos.flush();
-                fos.close();
-
-                //把文件插入到系统图库
-                MediaStore.Images.Media.insertImage(getContext().getContentResolver(), file.getAbsolutePath(), fileName, null);
-
-                //保存图片后发送广播通知更新数据库
-                Uri uri = Uri.fromFile(file);
-                getContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
+                output = new FileOutputStream(mFile);
+                output.write(bytes);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            finally {
+                mImage.close();
+                if (null != output) {
+                    try {
+                        output.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
-
     }
-
-
     /**
      * Compares two {@code Size}s based on their areas.
      */
