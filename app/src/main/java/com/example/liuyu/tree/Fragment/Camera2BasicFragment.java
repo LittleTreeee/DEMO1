@@ -22,7 +22,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.*;
@@ -42,20 +41,14 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.text.Layout;
-import android.text.StaticLayout;
-import android.text.TextPaint;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -69,8 +62,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.example.android.camera2basic.R;
 import com.example.liuyu.tree.view.AutoFitTextureView;
-import com.example.liuyu.tree.view.WriteDialogListener;
-import com.example.liuyu.tree.view.WritePadDialog;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -120,7 +111,7 @@ public class Camera2BasicFragment extends Fragment
                 magneticFieldValues);
         SensorManager.getOrientation(R, values);
         double degree = Math.toDegrees(values[1]);
-        int showDegree = (int) degree+1;
+        int showDegree = (int) Math.abs(degree)+1;
         String isVertical = "手机尚未竖直";
         if(Math.abs(degree)<95&&Math.abs(degree)>85){
             isVertical = "手机已竖直";
@@ -508,25 +499,24 @@ public class Camera2BasicFragment extends Fragment
     @Override
     public void onResume() {
 
-        iv.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-                WritePadDialog mWritePadDialog = new WritePadDialog(
-                        getActivity(), new WriteDialogListener() {
-
-                    @Override
-                    public void onPaintDone(Object object) {
-                        Bitmap mSignBitmap = (Bitmap) object;
-                        iv.setImageBitmap(mSignBitmap);
-//                                mTVSign.setVisibility(View.GONE);
-                    }
-                });
-
-                mWritePadDialog.show();
-            }
-        });
-
+//        iv.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View view) {
+//                MarkPadFragment mWritePadDialog = new MarkPadFragment(
+//                        getActivity(), new WriteDialogListener() {
+//
+//                    @Override
+//                    public void onPaintDone(Object object) {
+//                        Bitmap mSignBitmap = (Bitmap) object;
+//                        iv.setImageBitmap(mSignBitmap);
+////                                mTVSign.setVisibility(View.GONE);
+//                    }
+//                });
+//
+//                mWritePadDialog.show();
+//            }
+//        });
         super.onResume();
         startBackgroundThread();
 
@@ -898,6 +888,7 @@ public class Camera2BasicFragment extends Fragment
      * Capture a still picture. This method should be called when we get a response in
      * {@link #mCaptureCallback} from both {@link #lockFocus()}.
      */
+    //todo capture
     private void captureStillPicture() {
         try {
             final Activity activity = getActivity();
@@ -979,6 +970,27 @@ public class Camera2BasicFragment extends Fragment
         switch (view.getId()) {
             case R.id.picture: {
                 takePicture();
+
+                //todo 将获得的图片显示在界面上
+//                try {
+//                    //获取屏幕方向
+//                    int rotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();
+//                    //设置CaptureRequest输出到mImageReader
+//                    //CaptureRequest添加imageReaderSurface，不加的话就会导致ImageReader的onImageAvailable()方法不会回调
+//                    mPreviewRequestBuilder.addTarget(mImageReader.getSurface());
+////                    设置拍照方向
+////                    mPreviewRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATION.get(rotation));
+//                    //聚焦
+//                    mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
+//                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+//
+//                    //停止预览
+//                    mCaptureSession.stopRepeating();
+//                    //开始拍照，然后回调上面的接口重启预览，因为mPreviewBuilder设置ImageReader作为target，所以会自动回调ImageReader的onImageAvailable()方法保存图片
+//                    mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback, null);
+//                } catch (CameraAccessException e) {
+//                    e.printStackTrace();
+//                }
                 break;
             }
             case R.id.info: {
@@ -1023,11 +1035,6 @@ public class Camera2BasicFragment extends Fragment
             buffer.get(bytes);
             FileOutputStream output = null;
 
-//            final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-//            if (bitmap != null) {
-//                iv.setImageBitmap(bitmap);
-//            }
-
             SimpleDateFormat sdf = new SimpleDateFormat(
                     "yyyyMMdd_HHmmss",
                     Locale.US);
@@ -1055,37 +1062,16 @@ public class Camera2BasicFragment extends Fragment
                 }
             }
 
-            CameraManager manager = (CameraManager)getActivity().getSystemService(Context.CAMERA_SERVICE);
-            // 获取指定摄像头的特性
-            CameraCharacteristics characteristics
-                    = null;
-            try {
-                characteristics = manager.getCameraCharacteristics(mCameraId);
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
-//            // 获取摄像头支持的配置属性
-//            StreamConfigurationMap map = characteristics.get(
-//                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-//            // 获取摄像头支持的最大尺寸
-//            Size largest = Collections.max(
-//                    Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
-//                    getActivity().CompareSizesByArea());
-//            // 获取最佳的预览尺寸
-//            Size previewSize = chooseOptimalSize(map.getOutputSizes(
-//                    SurfaceTexture.class), mImage.getWidth(), mImage.getHeight(), largest);
-//            // 根据选中的预览尺寸来调整预览组件（TextureView）的长宽比
-//            int orientation = getResources().getConfiguration().orientation;
-//            if (orientation == Configuration.ORIENTATION_LANDSCAPE)
-//            {
-//                mTextureView.setAspectRatio(previewSize.getWidth(), previewSize.
-//                        getHeight());
-//            }
-//            else
-//            {
-//                mTextureView.setAspectRatio(previewSize.getHeight(),
-//                        previewSize.getWidth());
-//            }
+            //跳转到标注界面
+            Bundle bundle = new Bundle();
+            bundle.putSerializable("bytes",bytes);
+            Fragment markupFragment = new MarkPadFragment();
+            markupFragment.setArguments(bundle);
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.container, markupFragment, null)
+                    .addToBackStack(null)
+                    .commit();
         }
     }
     /**
