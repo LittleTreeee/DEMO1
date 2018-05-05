@@ -72,6 +72,13 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+
+/**
+ * todo Camera2BasicFragement介绍
+ * 大部分代码都是从github上直接copy的
+ * https://github.com/googlesamples/android-Camera2Basic
+ * 只添加了传感器和界面跳转，为了方便看我改了哪里，我都用todo标注了
+ */
 public class Camera2BasicFragment extends Fragment
         implements View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback{
 
@@ -104,6 +111,7 @@ public class Camera2BasicFragment extends Fragment
 
 
     //todo: 更新是否垂直的信息
+    //关于传感器的调用：https://www.cnblogs.com/mengdd/archive/2013/05/19/3086781.html
     private void updateOrientation(){
         float[] values = new float[3];
         float[] R = new float[9];
@@ -888,7 +896,7 @@ public class Camera2BasicFragment extends Fragment
      * Capture a still picture. This method should be called when we get a response in
      * {@link #mCaptureCallback} from both {@link #lockFocus()}.
      */
-    //todo capture
+
     private void captureStillPicture() {
         try {
             final Activity activity = getActivity();
@@ -916,6 +924,7 @@ public class Camera2BasicFragment extends Fragment
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                                @NonNull CaptureRequest request,
                                                @NonNull TotalCaptureResult result) {
+                    //todo showToast()在这里会对保存路径有一个提示
                     showToast("Saved: " + mFile);
                     Log.d(TAG, mFile.toString());
                     unlockFocus();
@@ -972,6 +981,8 @@ public class Camera2BasicFragment extends Fragment
                 takePicture();
 
                 //todo 将获得的图片显示在界面上
+                //这里解释一下，本来是既可以直接就显示在当前的fragment上的，但是想到还要做会退按钮什么的，就直接让相机拍完照就跳转到另一个fragment中了
+                //所以这一段代码没有用了
 //                try {
 //                    //获取屏幕方向
 //                    int rotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();

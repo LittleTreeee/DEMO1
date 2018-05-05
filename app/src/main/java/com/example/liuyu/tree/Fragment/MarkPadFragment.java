@@ -17,6 +17,11 @@ import com.example.android.camera2basic.R;
 import com.example.liuyu.tree.view.PaintView;
 import com.example.liuyu.tree.view.WriteDialogListener;
 
+/**
+ * todo 负责进行标注的界面
+ * 直接按手机上的返回键就可以返回到上一个界面
+ *
+ */
 public class MarkPadFragment extends Fragment {
     private Context mContext;
     private WriteDialogListener mWriteDialogListener;
