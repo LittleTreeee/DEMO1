@@ -55,6 +55,39 @@ public class MarkPadFragment extends Fragment {
             Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
             iv.setImageBitmap(bitmap);
         }
+
+        mBtnOK.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+//                if (mPaintView.getPath().isEmpty()) {
+//                    Toast.makeText(mContext, "请写下你的大名", Toast.LENGTH_SHORT).show();
+//                    return;
+//                }
+//                mWriteDialogListener.onPaintDone(mPaintView.getPaintBitmap());
+//                dismiss();
+
+                Toast.makeText(mContext, "确认", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        mBtnClear.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                mPaintView.clear();
+                Toast.makeText(mContext, "清除", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        mBtnCancel.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+//                cancel();
+                Toast.makeText(mContext, "取消", Toast.LENGTH_SHORT).show();
+            }
+        });
         return view;
     }
 

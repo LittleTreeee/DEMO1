@@ -33,13 +33,13 @@ public class PaintView extends View {
         mPaint.setAntiAlias(true); // 去除锯齿
         mPaint.setStrokeWidth(5);
         mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setColor(Color.BLACK);
+        mPaint.setColor(Color.RED); // 画笔的颜色是红色
 
         mPath = new Path();
 
         mBitmap = Bitmap.createBitmap(screenWidth, screenHeight, Config.ARGB_8888);
         mCanvas = new Canvas(mBitmap);
-//      mCanvas.drawColor(Color.WHITE);
+//        mCanvas.drawColor(Color.RED);
     }
 
     @Override
