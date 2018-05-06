@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,13 @@ import android.widget.Toast;
 import com.example.android.camera2basic.R;
 import com.example.liuyu.tree.view.PaintView;
 import com.example.liuyu.tree.view.WriteDialogListener;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * todo 负责进行标注的界面
@@ -29,6 +37,7 @@ public class MarkPadFragment extends Fragment {
     private FrameLayout mFrameLayout;
     private ImageView iv;
     private Button mBtnOK, mBtnClear, mBtnCancel;
+    private byte[] bytes;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_mark, null);
@@ -40,6 +49,7 @@ public class MarkPadFragment extends Fragment {
         getActivity().getWindow().getWindowManager().getDefaultDisplay().getMetrics(mDisplayMetrics);
         final int screenWidth = mDisplayMetrics.widthPixels;
         final int screenHeight = mDisplayMetrics.heightPixels;
+
         mPaintView = new PaintView(mContext, screenWidth, screenHeight);
         mFrameLayout.addView(mPaintView);
         mPaintView.requestFocus();
@@ -48,7 +58,7 @@ public class MarkPadFragment extends Fragment {
         mBtnClear = (Button) view.findViewById(R.id.write_pad_clear);
         mBtnCancel = (Button) view.findViewById(R.id.write_pad_cancel);
         iv = view.findViewById(R.id.iv);
-        byte[] bytes = (byte[])getArguments().get("bytes");
+        bytes = (byte[])getArguments().get("bytes");
         if(bytes!=null) {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inSampleSize = 2;
@@ -66,8 +76,35 @@ public class MarkPadFragment extends Fragment {
 //                }
 //                mWriteDialogListener.onPaintDone(mPaintView.getPaintBitmap());
 //                dismiss();
+//
+            FileOutputStream output = null;
 
-                Toast.makeText(mContext, "确认", Toast.LENGTH_SHORT).show();
+            SimpleDateFormat sdf = new SimpleDateFormat(
+                    "yyyyMMdd_HHmmss",
+                    Locale.US);
+
+            String fname = "IMG_" +
+                    sdf.format(new Date())
+                    + ".jpg";
+            File mFile = new File(getActivity().getApplication().getExternalFilesDir(null), fname);
+
+            try {
+                output = new FileOutputStream(mFile);
+                output.write(bytes);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            finally {
+                if (null != output) {
+                    try {
+                        output.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+                Toast.makeText(mContext, "保存", Toast.LENGTH_SHORT).show();
             }
         });
 
