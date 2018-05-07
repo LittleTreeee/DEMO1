@@ -506,25 +506,6 @@ public class Camera2BasicFragment extends Fragment
 
     @Override
     public void onResume() {
-
-//        iv.setOnClickListener(new View.OnClickListener() {
-//
-//            @Override
-//            public void onClick(View view) {
-//                MarkPadFragment mWritePadDialog = new MarkPadFragment(
-//                        getActivity(), new WriteDialogListener() {
-//
-//                    @Override
-//                    public void onPaintDone(Object object) {
-//                        Bitmap mSignBitmap = (Bitmap) object;
-//                        iv.setImageBitmap(mSignBitmap);
-////                                mTVSign.setVisibility(View.GONE);
-//                    }
-//                });
-//
-//                mWritePadDialog.show();
-//            }
-//        });
         super.onResume();
         startBackgroundThread();
 

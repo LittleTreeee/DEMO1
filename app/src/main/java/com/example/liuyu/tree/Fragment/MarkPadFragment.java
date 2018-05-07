@@ -1,22 +1,17 @@
 package com.example.liuyu.tree.Fragment;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.*;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.text.method.Touch;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 import com.example.android.camera2basic.R;
-import com.example.liuyu.tree.view.PaintView;
-import com.example.liuyu.tree.view.WriteDialogListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,81 +25,62 @@ import java.util.Locale;
  * 直接按手机上的返回键就可以返回到上一个界面
  *
  */
-public class MarkPadFragment extends Fragment {
+public class MarkPadFragment extends Fragment{
     private Context mContext;
-    private WriteDialogListener mWriteDialogListener;
-    private PaintView mPaintView;
-    private FrameLayout mFrameLayout;
-    private ImageView iv;
+    private ImageView imageView;
     private Button mBtnOK, mBtnClear, mBtnCancel;
     private byte[] bytes;
+    private Bitmap bitmap;
+    private Bitmap photo;
+    private Canvas canvas; //画布
+    private Paint paint; //画笔
+    private Matrix matrix; //矩阵，空间变换
+    private float downX = 0, downY=0, upX=0, upY=0; //定义按下和停止位置（x,y）坐标
+    private BitmapFactory.Options options;
+
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_mark, null);
+        imageView = view.findViewById(R.id.iv);
 
-        mFrameLayout = view.findViewById(R.id.markpad);
-        mContext = getContext();
         // 获取屏幕尺寸
         DisplayMetrics mDisplayMetrics = new DisplayMetrics();
         getActivity().getWindow().getWindowManager().getDefaultDisplay().getMetrics(mDisplayMetrics);
-        final int screenWidth = mDisplayMetrics.widthPixels;
-        final int screenHeight = mDisplayMetrics.heightPixels;
+        int screenWidth = mDisplayMetrics.widthPixels;
+        int screenHeight = mDisplayMetrics.heightPixels;
 
-        mPaintView = new PaintView(mContext, screenWidth, screenHeight);
-        mFrameLayout.addView(mPaintView);
-        mPaintView.requestFocus();
+        //之前Camera2BasicFragment传过来的图片
+        bytes = (byte[])getArguments().get("bytes");
+        if(bytes!=null) {
+            options = new BitmapFactory.Options();
+            options.inSampleSize = calculateInSampleSize(options, screenWidth, screenHeight);
+            photo = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+        }
+
+        mContext = getContext();
+
+        bitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+        canvas = new Canvas(bitmap);
+        paint = new Paint();
+        paint.setColor(Color.RED);
+        paint.setStrokeWidth(5);
+        matrix = new Matrix();
+        // 参数为正则向右旋转（顺时针旋转）
+        matrix.postRotate(45);
+//        canvas.drawBitmap(photo, matrix, paint);
+        canvas.drawBitmap(photo, 0, 0, null);
+        imageView.setImageBitmap(bitmap);
 
         mBtnOK = (Button) view.findViewById(R.id.write_pad_ok);
         mBtnClear = (Button) view.findViewById(R.id.write_pad_clear);
         mBtnCancel = (Button) view.findViewById(R.id.write_pad_cancel);
-        iv = view.findViewById(R.id.iv);
-        bytes = (byte[])getArguments().get("bytes");
-        if(bytes!=null) {
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = 2;
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
-            iv.setImageBitmap(bitmap);
-        }
 
         mBtnOK.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-//                if (mPaintView.getPath().isEmpty()) {
-//                    Toast.makeText(mContext, "请写下你的大名", Toast.LENGTH_SHORT).show();
-//                    return;
-//                }
-//                mWriteDialogListener.onPaintDone(mPaintView.getPaintBitmap());
-//                dismiss();
-//
-            FileOutputStream output = null;
-
-            SimpleDateFormat sdf = new SimpleDateFormat(
-                    "yyyyMMdd_HHmmss",
-                    Locale.US);
-
-            String fname = "IMG_" +
-                    sdf.format(new Date())
-                    + ".jpg";
-            File mFile = new File(getActivity().getApplication().getExternalFilesDir(null), fname);
-
-            try {
-                output = new FileOutputStream(mFile);
-                output.write(bytes);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            finally {
-                if (null != output) {
-                    try {
-                        output.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-                Toast.makeText(mContext, "保存", Toast.LENGTH_SHORT).show();
+                saveImage();
+                Toast.makeText(mContext, "保存成功", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -112,7 +88,7 @@ public class MarkPadFragment extends Fragment {
 
             @Override
             public void onClick(View v) {
-                mPaintView.clear();
+                //todo 清除
                 Toast.makeText(mContext, "清除", Toast.LENGTH_SHORT).show();
             }
         });
@@ -125,7 +101,105 @@ public class MarkPadFragment extends Fragment {
                 Toast.makeText(mContext, "取消", Toast.LENGTH_SHORT).show();
             }
         });
+
+        view.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // TODO Auto-generated method stub
+                int action = event.getAction();
+                // 判断不同状态
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                        // 按下时记下坐标
+                        downX = event.getX();
+                        downY = event.getY();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        // 移动过程中不断绘制line
+                        upX = event.getX();
+                        upY = event.getY();
+                        canvas.drawLine(downX, downY, upX, upY, paint);
+                        imageView.invalidate();
+                        downX = upX;
+                        downY = upY;
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        // 停止时记录坐标
+                        upX = event.getX();
+                        upY = event.getY();
+                        canvas.drawLine(downX, downY, upX, upY, paint);
+                        imageView.invalidate();
+                        break;
+                    case MotionEvent.ACTION_CANCEL:
+                        break;
+                    default:
+                        break;
+                }
+                //返回true表示，一旦事件开始就要继续接受触摸事件
+                return true;
+            }
+        });
+
         return view;
+    }
+
+    private void saveImage(){
+        FileOutputStream output = null;
+
+        SimpleDateFormat sdf = new SimpleDateFormat(
+                "yyyyMMdd_HHmmss",
+                Locale.US);
+
+        String fname = "IMG_" +
+                sdf.format(new Date())
+                + ".jpg";
+        File mFile = new File(getActivity().getApplication().getExternalFilesDir(null), fname);
+
+        try {
+            output = new FileOutputStream(mFile);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output);
+            output.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        finally {
+            if (null != output) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    // 计算 BitmapFactpry 的 inSimpleSize的值的方法
+    public int calculateInSampleSize(BitmapFactory.Options options,
+                                     int reqWidth, int reqHeight) {
+        if (reqWidth == 0 || reqHeight == 0) {
+            return 1;
+        }
+
+        // 获取图片原生的宽和高
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        // 如果原生的宽高大于请求的宽高,那么将原生的宽和高都置为原来的一半
+        if (height > reqHeight || width > reqWidth) {
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // 主要计算逻辑
+            // Calculate the largest inSampleSize value that is a power of 2 and
+            // keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+        return inSampleSize;
     }
 
 }
