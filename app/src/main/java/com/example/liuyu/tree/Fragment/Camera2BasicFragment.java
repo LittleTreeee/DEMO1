@@ -88,7 +88,6 @@ public class Camera2BasicFragment extends Fragment
     private float[] accelerometerValues = new float[3];
     private float[] magneticFieldValues = new float[3];
     private TextView degreeTextView;
-    private ImageView iv;
 
     private final SensorEventListener sensorEventListener = new SensorEventListener() {
 
@@ -485,7 +484,6 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         degreeTextView = (TextView) view.findViewById(R.id.degree);
-        iv = (ImageView) view.findViewById(R.id.iv);
 
 
         sensorManager = (SensorManager)this.getActivity().getSystemService(Context.SENSOR_SERVICE);

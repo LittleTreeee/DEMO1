@@ -59,14 +59,14 @@ public class MarkPadFragment extends Fragment{
 
         mContext = getContext();
 
-        bitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
+//        bitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bitmap);
         paint = new Paint();
         paint.setColor(Color.RED);
         paint.setStrokeWidth(5);
         matrix = new Matrix();
         // 参数为正则向右旋转（顺时针旋转）
-        matrix.postRotate(45);
+//        matrix.postRotate(45);
 //        canvas.drawBitmap(photo, matrix, paint);
         canvas.drawBitmap(photo, 0, 0, null);
         imageView.setImageBitmap(bitmap);
